@@ -7,7 +7,15 @@ class Instance:
 
     def __init__(self, folder):
         """"
-            Create instance object for some problem instance
+            Read instance information from file and validate it
+        """
+
+        self.read_instance(folder)
+        self.check_assumptions()
+
+    def read_instance(self, folder):
+        """"
+            Read instance information from file
         """
 
         self.name = os.path.basename(folder)
@@ -81,6 +89,11 @@ class Instance:
             for index, _ in enumerate(self.L):
                 self.r[str(row['id'])][str(index + 1)] = float(row[str(index + 1)])
 
+    def check_assumptions(self):
+        """
+            Check assumptions about the instance information
+        """
+
         pass
 
     def __str__(self):
@@ -102,3 +115,21 @@ class Instance:
         payload += '\n*-------------------------------------------------------------------------*\n\n'
 
         return payload
+
+    def p(self, y_k, w_k):
+
+        if not set(y_k).issubset(self.L):
+            quit('Value computation error: {} is not a subset of {}'.format(y_k, self.L))
+
+        if not set(w_k).issubset(self.L):
+            quit('Value computation error: {} is not a subset of {}'.format(w_k, self.L))
+
+        revenue = .0
+
+        for j in self.C:
+            for i in self.rank[j]:
+                if i in y_k or i in w_k:
+                    revenue += self.r[j][i] if i in y_k else .0
+                    break
+
+        return revenue
