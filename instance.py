@@ -1,5 +1,4 @@
 import random as rd
-from re import I
 import pandas as pd
 import os
 
@@ -9,6 +8,8 @@ class Instance:
         """"
             Read instance information from file and validate it
         """
+
+        rd.seed(100)
 
         self.read_instance(folder)
         self.check_assumptions()
@@ -48,6 +49,7 @@ class Instance:
             
         self.L = [i.strip() for i in self.L]
         self.C = [j.strip() for j in self.C]
+        self.K = list(range(0, self.N + 1))
 
         locations_data = pd.read_csv(locations_path)
 
@@ -88,6 +90,35 @@ class Instance:
             self._r[str(row['id'])] = {}
             for index, _ in enumerate(self.L):
                 self._r[str(row['id'])][str(index + 1)] = float(row[str(index + 1)])
+
+        self._W = {}
+
+        for k in self.K:
+            self._W[k] = self.sample_scenarios()
+            print(self._W[k])
+
+    def sample_scenarios(self):
+        """
+            Sample s scenarios for competitor activations
+        """
+
+        samples = []
+
+        counter = 0
+        
+        while counter <= self.S:
+            
+            sizes = range(0, len(self.L) + 1)
+
+            size = rd.sample(sizes, 1)[0]
+
+            sample = sorted(rd.sample(self.L, size))
+
+            if sample not in samples:
+                samples.append(sample)
+                counter += 1
+
+        return samples
 
     def check_assumptions(self):
         """
@@ -139,8 +170,11 @@ class Instance:
 
     def m(self, y_k):
         """
-            Compute maintenance for company with y_k
+            Compute maintenance for company with activation y_k
         """
+
+        if not set(y_k).issubset(self.L):
+            quit('Value computation error: {} is not a subset of {}'.format(y_k, self.L))
 
         maintenance = .0
 
@@ -148,3 +182,71 @@ class Instance:
             maintenance += self._m[i]
 
         return maintenance
+
+    def f(self, y_k, u_k, w_k):
+        """
+            Compute transition function for activation y_k, action u_k, and realization w_k
+        """
+
+        if not set([u_k]).issubset(self.L):
+            quit('Value computation error: {} is not a subset of {}'.format(u_k, self.L))
+        
+        if not set(w_k).issubset(self.L):
+            quit('Value computation error: {} is not a subset of {}'.format(w_k, self.L))
+
+        if u_k in w_k:
+            return []
+        else:
+            return [u_k]
+
+    def p(self, k, w_k, y_k):
+        """
+            Compute probability of activation w_k given activation y_k at stage k
+        """
+
+        # return self.profitability(k, w_k, y_k)
+        return self.cheapness(k, w_k, y_k)
+
+    def profitability(self, k, w_k, y_k):
+        """
+            Compute probability of activation w_k based on profitability
+        """
+
+        x_k = y_k[0]
+
+        profit = self.r(w_k, y_k) - self.m(w_k)
+
+        if profit <= .0 or x_k in w_k:
+            return .0
+        else:
+            total = .0
+            for w in self._W[k]:
+                local = self.r(w, y_k) - self.m(w)
+                if local > .0 and x_k not in w:
+                    total += local
+            return profit / total
+
+    def cheapness(self, k, w_k, y_k):
+        """
+            Compute probability of activation w_k based on cheapness
+        """
+
+        x_k = y_k[0]
+
+        maintenance = self.m(w_k)
+        offset = maintenance
+        counter = 0
+
+        if x_k in w_k:
+            return .0
+        else:
+            total = .0
+            for w in self._W[k]:
+                local = self.m(w)
+                if x_k not in w:
+                    if local > offset:
+                        offset = local
+                    counter += 1
+                    total += local
+            total = offset * counter - total
+            return (offset - maintenance) / total
