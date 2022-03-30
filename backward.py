@@ -49,9 +49,6 @@ class Backward:
 
                     self.stored_J[k][x] = minimum
                     self.stored_u[k][x] = action
-            
-            if k == 3:
-                _ = input('wait...')
 
     def g(self, k, x, u):
         """"

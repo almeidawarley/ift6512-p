@@ -96,13 +96,13 @@ class Instance:
 
         for k in self.K:
             if k != self.N:
-                # self.W[k] = self.sample_scenarios()
-                self.W[k] = self.list_scenarios()
+                self.W[k] = self.sample_scenarios()
+                # self.W[k] = self.list_scenarios()
                 # print(self.W[k])
 
         self.empty = '0'
 
-        self.decay = 0.5
+        self.decay = .5
 
         self.X = self.L + [self.empty]
 
