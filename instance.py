@@ -1,5 +1,6 @@
 import random as rd
 import pandas as pd
+import itertools as tl
 import os
 
 class Instance:
@@ -22,7 +23,7 @@ class Instance:
         self.name = os.path.basename(folder)
 
         if not os.path.isdir(folder):
-            quit('Instance reading error: {} is not a valid folder'.format(folder))
+            raise Exception('Instance reading error: {} is not a valid folder'.format(folder))
 
         metadata_path = os.path.join(folder, 'metadata.txt')
         locations_path = os.path.join(folder, 'locations.csv')
@@ -30,16 +31,16 @@ class Instance:
         revenues_path = os.path.join(folder, 'revenues.csv')
 
         if not os.path.exists(metadata_path):
-            quit('Instance reading error: {} does not exist'.format(metadata_path))
+            raise Exception('Instance reading error: {} does not exist'.format(metadata_path))
 
         if not os.path.exists(locations_path):
-            quit('Instance reading error: {} does not exist'.format(locations_path))
+            raise Exception('Instance reading error: {} does not exist'.format(locations_path))
 
         if not os.path.exists(customers_path):
-            quit('Instance reading error: {} does not exist'.format(customers_path))
+            raise Exception('Instance reading error: {} does not exist'.format(customers_path))
 
         if not os.path.exists(revenues_path):
-            quit('Instance reading error: {} does not exist'.format(revenues_path))
+            raise Exception('Instance reading error: {} does not exist'.format(revenues_path))
 
         with open(metadata_path) as content:
             self.N = int(content.readline())
@@ -54,7 +55,7 @@ class Instance:
         locations_data = pd.read_csv(locations_path)
 
         if len(locations_data) != len(self.L):
-            quit('Instance reading error: {} is missing entries'.format(locations_path))
+            raise Exception('Instance reading error: {} is missing entries'.format(locations_path))
 
         self._m = {}
 
@@ -64,10 +65,10 @@ class Instance:
         customers_data = pd.read_csv(customers_path)
 
         if len(customers_data) != len(self.C):
-            quit('Instance reading error: {} is missing entries'.format(customers_path))
+            raise Exception('Instance reading error: {} is missing entries'.format(customers_path))
 
         if len(customers_data.columns) - 1!= len(self.L):
-            quit('Instance reading error: {} is missing columns'.format(customers_path))
+            raise Exception('Instance reading error: {} is missing columns'.format(customers_path))
 
         self.rank = {}
 
@@ -79,10 +80,10 @@ class Instance:
         revenues_data = pd.read_csv(revenues_path)
 
         if len(revenues_data) != len(self.C):
-            quit('Instance reading error: {} is missing entries'.format(revenues_path))
+            raise Exception('Instance reading error: {} is missing entries'.format(revenues_path))
 
         if len(revenues_data.columns) - 1!= len(self.L):
-            quit('Instance reading error: {} is missing columns'.format(revenues_path))
+            raise Exception('Instance reading error: {} is missing columns'.format(revenues_path))
 
         self._r = {}
 
@@ -91,11 +92,32 @@ class Instance:
             for index, _ in enumerate(self.L):
                 self._r[str(row['id'])][str(index + 1)] = float(row[str(index + 1)])
 
-        self._W = {}
+        self.W = {}
 
         for k in self.K:
-            self._W[k] = self.sample_scenarios()
-            print(self._W[k])
+            if k != self.N:
+                # self.W[k] = self.sample_scenarios()
+                self.W[k] = self.list_scenarios()
+                # print(self.W[k])
+
+        self.empty = '0'
+
+        self.decay = 0.5
+
+        self.X = self.L + [self.empty]
+
+    def list_scenarios(self):
+        """
+            List all scenarios for competitor activations
+        """
+
+        samples = []
+
+        for size in range(0, len(self.L) + 1):
+
+            samples += list(tl.combinations(self.L, size))
+
+        return samples
 
     def sample_scenarios(self):
         """
@@ -153,10 +175,10 @@ class Instance:
         """
 
         if not set(y_k).issubset(self.L):
-            quit('Value computation error: {} is not a subset of {}'.format(y_k, self.L))
+            raise Exception('Value computation error: {} is not a subset of {}'.format(y_k, self.L))
 
         if not set(w_k).issubset(self.L):
-            quit('Value computation error: {} is not a subset of {}'.format(w_k, self.L))
+            raise Exception('Value computation error: {} is not a subset of {}'.format(w_k, self.L))
 
         revenue = .0
 
@@ -174,7 +196,7 @@ class Instance:
         """
 
         if not set(y_k).issubset(self.L):
-            quit('Value computation error: {} is not a subset of {}'.format(y_k, self.L))
+            raise Exception('Value computation error: {} is not a subset of {}'.format(y_k, self.L))
 
         maintenance = .0
 
@@ -188,13 +210,15 @@ class Instance:
             Compute transition function for activation y_k, action u_k, and realization w_k
         """
 
-        if not set([u_k]).issubset(self.L):
-            quit('Value computation error: {} is not a subset of {}'.format(u_k, self.L))
+        if not set([u_k]).issubset(self.L + [self.empty]):
+            raise Exception('Value computation error: {} is not a subset of {}'.format(u_k, self.L))
         
         if not set(w_k).issubset(self.L):
-            quit('Value computation error: {} is not a subset of {}'.format(w_k, self.L))
+            raise Exception('Value computation error: {} is not a subset of {}'.format(w_k, self.L))
 
-        if u_k in w_k:
+        if u_k == self.empty:
+            return []
+        elif u_k in w_k:
             return []
         else:
             return [u_k]
@@ -204,15 +228,15 @@ class Instance:
             Compute probability of activation w_k given activation y_k at stage k
         """
 
-        # return self.profitability(k, w_k, y_k)
-        return self.cheapness(k, w_k, y_k)
+        return self.profitability(k, w_k, y_k)
+        # return self.cheapness(k, w_k, y_k)
 
     def profitability(self, k, w_k, y_k):
         """
             Compute probability of activation w_k based on profitability
         """
 
-        x_k = y_k[0]
+        x_k = y_k[0] if len(y_k) == 1 else None
 
         profit = self.r(w_k, y_k) - self.m(w_k)
 
@@ -220,7 +244,7 @@ class Instance:
             return .0
         else:
             total = .0
-            for w in self._W[k]:
+            for w in self.W[k]:
                 local = self.r(w, y_k) - self.m(w)
                 if local > .0 and x_k not in w:
                     total += local
@@ -231,7 +255,7 @@ class Instance:
             Compute probability of activation w_k based on cheapness
         """
 
-        x_k = y_k[0]
+        x_k = y_k[0] if len(y_k) == 1 else None
 
         maintenance = self.m(w_k)
         offset = maintenance
@@ -241,7 +265,7 @@ class Instance:
             return .0
         else:
             total = .0
-            for w in self._W[k]:
+            for w in self.W[k]:
                 local = self.m(w)
                 if x_k not in w:
                     if local > offset:
@@ -250,3 +274,7 @@ class Instance:
                     total += local
             total = offset * counter - total
             return (offset - maintenance) / total
+
+    def U(self, x_k):
+
+        return [i for i in self.L if i != x_k]
