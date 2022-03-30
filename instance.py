@@ -54,10 +54,10 @@ class Instance:
         if len(locations_data) != len(self.L):
             quit('Instance reading error: {} is missing entries'.format(locations_path))
 
-        self.m = {}
+        self._m = {}
 
         for _, row in locations_data.iterrows():
-            self.m[str(row['id'])] = int(row['m'])
+            self._m[str(row['id'])] = int(row['m'])
 
         customers_data = pd.read_csv(customers_path)
 
@@ -82,12 +82,12 @@ class Instance:
         if len(revenues_data.columns) - 1!= len(self.L):
             quit('Instance reading error: {} is missing columns'.format(revenues_path))
 
-        self.r = {}
+        self._r = {}
 
         for _, row in revenues_data.iterrows():
-            self.r[str(row['id'])] = {}
+            self._r[str(row['id'])] = {}
             for index, _ in enumerate(self.L):
-                self.r[str(row['id'])][str(index + 1)] = float(row[str(index + 1)])
+                self._r[str(row['id'])][str(index + 1)] = float(row[str(index + 1)])
 
     def check_assumptions(self):
         """
@@ -109,14 +109,17 @@ class Instance:
         for j in self.C:
             payload += '\t\tCustomer {}: '.format(j)
             for index, _ in enumerate(self.L):
-                payload += '{} ({}) {} '.format(self.rank[j][index], self.r[j][self.rank[j][index]], '>' if index != len(self.L) - 1 else '\n')
+                payload += '{} ({}) {} '.format(self.rank[j][index], self._r[j][self.rank[j][index]], '>' if index != len(self.L) - 1 else '\n')
         payload += '\tNumber of periods: {}\n'.format(self.N)
         payload += '\tNumber of samples: {}\n'.format(self.S)
         payload += '\n*-------------------------------------------------------------------------*\n\n'
 
         return payload
 
-    def p(self, y_k, w_k):
+    def r(self, y_k, w_k):
+        """
+            Compute revenue for company with activation y_k when competitors have activation w_k
+        """
 
         if not set(y_k).issubset(self.L):
             quit('Value computation error: {} is not a subset of {}'.format(y_k, self.L))
@@ -129,7 +132,19 @@ class Instance:
         for j in self.C:
             for i in self.rank[j]:
                 if i in y_k or i in w_k:
-                    revenue += self.r[j][i] if i in y_k else .0
+                    revenue += self._r[j][i] if i in y_k else .0
                     break
 
         return revenue
+
+    def m(self, y_k):
+        """
+            Compute maintenance for company with y_k
+        """
+
+        maintenance = .0
+
+        for i in y_k:
+            maintenance += self._m[i]
+
+        return maintenance
