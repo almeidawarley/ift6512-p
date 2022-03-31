@@ -32,16 +32,12 @@ class Backward:
 
                 else:
 
-                    minimum = self.g(k, x, self.I.empty)
+                    minimum = self.Q(k, x, self.I.empty)
                     action = self.I.empty
-
-                    # print('\tAction: {}, objective: {}'.format(action, minimum))
 
                     for u in self.I.U(x):
 
-                        local = self.g(k, x, u)
-
-                        # print('\tAction: {}, objective: {}'.format(u, local))
+                        local = self.Q(k, x, u)
 
                         if local < minimum:
                             minimum = local
@@ -50,7 +46,7 @@ class Backward:
                     self.stored_J[k][x] = minimum
                     self.stored_u[k][x] = action
 
-    def g(self, k, x, u):
+    def Q(self, k, x, u):
         """"
             Compute expectation portion of the objective function
         """
@@ -83,4 +79,3 @@ class Backward:
             for x in self.I.X:
 
                 print('\tFrom location {}, go to location {}'.format(x, self.stored_u[k][x]))
-
