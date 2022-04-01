@@ -203,6 +203,13 @@ class Instance:
 
         return maintenance
 
+    def t(self, x_k, x_next):
+        """
+            Compute transportation from activation at x_k to activation at x_next
+        """
+
+        return self._t[x_k][x_next]
+
     def f(self, y_k, u_k, w_k):
         """
             Compute transition function for activation y_k, action u_k, and realization w_k

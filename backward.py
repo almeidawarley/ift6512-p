@@ -39,6 +39,8 @@ class Backward:
 
                         local = self.Q(k, x, u)
 
+                        print('\t For state {} at stage {}, action {} has cost of {}'.format(x, k, u, local))
+
                         if local < minimum:
                             minimum = local
                             action = u
@@ -59,9 +61,9 @@ class Backward:
 
             y_next = self.I.f(y, u, w)
 
-            cost -= self.I.p(k, w, y) * self.I.r(y_next, w)
-
             x_next = self.I.empty if len(y_next) == 0 else y_next[0]
+
+            cost -= self.I.p(k, w, y) * self.I.r(y_next, w) # + self.I.t(x, x_next)
 
             cost += self.stored_J[k+1][x_next]
 
