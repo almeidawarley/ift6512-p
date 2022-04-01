@@ -32,10 +32,12 @@ class Backward:
 
                 else:
 
-                    minimum = self.Q(k, x, self.I.empty)
-                    action = self.I.empty
+                    U = self.I.U(x)
 
-                    for u in self.I.U(x):
+                    minimum = self.Q(k, x, U[0])
+                    action = U[0]
+
+                    for u in U:
 
                         local = self.Q(k, x, u)
 

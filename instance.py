@@ -1,6 +1,7 @@
 import random as rd
 import pandas as pd
 import itertools as tl
+import scipy.special as sp
 import os
 
 class Instance:
@@ -109,8 +110,9 @@ class Instance:
         samples = []
 
         for size in range(0, len(self.L) + 1):
-
-            samples += list(tl.combinations(self.L, size))
+            
+            local = tl.combinations(self.L, size)
+            samples += [list(e) for e in local]
 
         return samples
 
@@ -234,51 +236,28 @@ class Instance:
         """
 
         return self.profitability(k, w_k, y_k)
-        # return self.cheapness(k, w_k, y_k)
 
-    def profitability(self, k, w_k, y_k):
+    def profitability(self, k, w_k, y_k, b =3 ):
         """
             Compute probability of activation w_k based on profitability
         """
 
         x_k = y_k[0] if len(y_k) == 1 else None
 
-        profit = self.r(w_k, y_k) - self.m(w_k)
-
-        if profit <= .0 or x_k in w_k:
-            return .0
-        else:
-            total = .0
-            for w in self.W[k]:
-                local = self.r(w, y_k) - self.m(w)
-                if local > .0 and x_k not in w:
-                    total += local
-            return profit / total
-
-    def cheapness(self, k, w_k, y_k):
-        """
-            Compute probability of activation w_k based on cheapness
-        """
-
-        x_k = y_k[0] if len(y_k) == 1 else None
-
-        maintenance = self.m(w_k)
-        offset = maintenance
-        counter = 0
-
         if x_k in w_k:
             return .0
-        else:
-            total = .0
-            for w in self.W[k]:
-                local = self.m(w)
-                if x_k not in w:
-                    if local > offset:
-                        offset = local
-                    counter += 1
-                    total += local
-            total = offset * counter - total
-            return (offset - maintenance) / total
+
+        omega = [w for w in self.W[k] if x_k not in w]
+
+        index = omega.index(w_k)
+
+        beta = 1 / (b**k)
+
+        profits = [beta * (self.r(w, y_k) - self.m(w)) for w in omega]
+
+        exp = sp.softmax(profits)
+
+        return exp[index] / sum(exp)
 
     def U(self, x_k):
 
