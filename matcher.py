@@ -2,7 +2,7 @@ import random as rd
 
 class Matcher:
 
-    def __init__(self, instance, Backward, Parametric, Rollout):
+    def __init__(self, instance, Backward, Parametric):
         """"
             Create matcher object for an instance with some solvers
         """
@@ -10,7 +10,6 @@ class Matcher:
         self.problem_instance = instance
         self.backward_class = Backward
         self.parametric_class = Parametric
-        self.rollout_class = Rollout
         
         pass
 

@@ -92,13 +92,8 @@ class Instance:
             for index, _ in enumerate(self.L):
                 self._r[str(row['id'])][str(index + 1)] = float(row[str(index + 1)])
 
-        self.W = {}
-
-        for k in self.K:
-            if k != self.N:
-                self.W[k] = self.sample_scenarios()
-                # self.W[k] = self.list_scenarios()
-                # print(self.W[k])
+        self.W = { k : self.list_scenarios() for k in self.K if k != self.N }
+        # self.W = { k : self.sample_scenarios() for k in self.K if k != self.N }
 
         self.empty = '0'
 
@@ -197,6 +192,9 @@ class Instance:
 
         if not set(y_k).issubset(self.L):
             raise Exception('Value computation error: {} is not a subset of {}'.format(y_k, self.L))
+
+        if len(y_k) == 0:
+            return 0
 
         maintenance = .0
 
