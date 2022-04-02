@@ -21,16 +21,20 @@ class Backward:
             self.stored_J[k] = {}
             self.stored_u[k] = {}
 
+            print('\tStage {}'.format(k))
+
             for x in self.I.X:
 
                 if k == self.I.N:
 
                     y = [x] if x != self.I.empty else []
 
-                    self.stored_J[k][x] = self.I.m(y)
+                    self.stored_J[k][x] = self.I.m(k, y)
                     self.stored_u[k][x] = -1
 
                 else:
+
+                    print('\t\tState {}'.format(x))
 
                     U = self.I.U(x)
 
@@ -41,7 +45,7 @@ class Backward:
 
                         local = self.Q(k, x, u)
 
-                        print('\t For state {} at stage {}, action {} has cost of {}'.format(x, k, u, local))
+                        print('\t\t\tAction {} -> Q value {}'.format(u, round(local, 2)))
 
                         if local < minimum:
                             minimum = local
@@ -57,17 +61,21 @@ class Backward:
 
         y = [x] if x != self.I.empty else []
 
-        cost = self.I.m(y)
+        cost = self.I.m(k, y)
 
         for w in self.I.W[k]:
+
+            p = self.I.p(k, w, y)
+
+            # TASK: add condition p > .00001
 
             y_next = self.I.f(y, u, w)
 
             x_next = self.I.empty if len(y_next) == 0 else y_next[0]
 
-            cost -= self.I.p(k, w, y) * self.I.r(y_next, w) # + self.I.t(x, x_next)
+            cost -= p * self.I.r(y_next, w) # + self.I.t(x, x_next)
 
-            cost += self.stored_J[k+1][x_next]
+            cost += p * self.stored_J[k+1][x_next]
 
         return cost
 
