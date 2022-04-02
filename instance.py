@@ -1,7 +1,7 @@
+import scipy.special as sp
+import itertools as tl
 import random as rd
 import pandas as pd
-import itertools as tl
-import scipy.special as sp
 import os
 
 class Instance:
@@ -271,8 +271,67 @@ class Instance:
 
     def phi(self, k, x_k, u_k):
 
-        first_option_x = sum([1 for j in self.C if self.rank[j][0] == x_k])
+        features = []
 
-        first_option_u = sum([1 for j in self.C if self.rank[j][0] == u_k])
+        '''
 
-        return [(self.N - k) * -1 * first_option_x, (self.N - k) * first_option_u]
+        # Option 1
+
+        features += [k]
+
+        features += [1 if x_k == self.empty else 0]
+
+        for index, _ in enumerate(self.L):
+            
+            C = [1 for j in self.C if self.rank[j][index] == x_k]
+
+            features += [sum(C)]
+
+            # features += [mt.exp(sum(C))]
+
+            C = [1 for j in self.C if self.rank[j][index] == u_k]
+
+            features += [sum(C)]
+
+            # features += [mt.exp(sum(C))]
+
+        features += [self.rank[j].index(x_k) - self.rank[j].index(u_k) if x_k != self.empty else len(self.L) + 1 for j in self.C]
+
+        '''
+
+        '''
+        
+        # Option 2
+
+        features += [1 if x_k == self.empty else 0]
+
+        features += [self._m[x_k] if x_k != self.empty else 0]
+        features += [self._m[u_k]]
+
+        features += [self._r[j][x_k] if x_k != self.empty else 0 for j in self.C]
+
+        features += [self._r[j][u_k] for j in self.C]
+
+        '''
+
+        features += [1 if x_k == self.empty else 0]
+
+        for w in self.L:
+
+            y_k = [x_k] if x_k != self.empty else []
+
+            features += [self.r(y_k, [w])]
+            
+            features += [self.m(k, y_k)]
+
+            z_k = [u_k]
+
+            features += [self.r(z_k, [w])]
+            
+            features += [self.m(k, z_k)]
+
+        return features
+
+    def dummy(self):
+
+        return [1 for _ in self.phi(0, self.empty, '1')]
