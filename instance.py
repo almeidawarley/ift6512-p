@@ -48,6 +48,7 @@ class Instance:
             self.L = content.readline().split(',')
             self.C = content.readline().split(',')
             self.S = int(content.readline())
+            self.d = int(content.readline())
             
         self.L = [i.strip() for i in self.L]
         self.C = [j.strip() for j in self.C]
@@ -98,9 +99,7 @@ class Instance:
 
         self.empty = '0'
 
-        self.decay = .5
-
-        self.X = self.L + [self.empty]
+        self.X = [self.empty] + self.L
 
     def list_scenarios(self):
         """
@@ -187,10 +186,13 @@ class Instance:
 
         return revenue
 
-    def m(self, y_k):
+    def m(self, k, y_k):
         """
             Compute maintenance for company with activation y_k
         """
+
+        if k == 0:
+            return .0
 
         if not set(y_k).issubset(self.L):
             raise Exception('Value computation error: {} is not a subset of {}'.format(y_k, self.L))
@@ -237,7 +239,7 @@ class Instance:
 
         return self.profitability(k, w_k, y_k)
 
-    def profitability(self, k, w_k, y_k, b =3 ):
+    def profitability(self, k, w_k, y_k):
         """
             Compute probability of activation w_k based on profitability
         """
@@ -251,14 +253,26 @@ class Instance:
 
         index = omega.index(w_k)
 
-        beta = 1 / (b**k)
+        beta = 1 / self.d ** k
 
-        profits = [beta * (self.r(w, y_k) - self.m(w)) for w in omega]
+        profits = [beta * (self.r(w, y_k) - self.m(k, w)) for w in omega]
 
         exp = sp.softmax(profits)
 
-        return exp[index] / sum(exp)
+        # print('omega = {}'.format(omega))
+        # print('exp[index] = {}'.format(exp[index]))
+        # print('exp = {}'.format(exp))
+
+        return exp[index]
 
     def U(self, x_k):
 
         return [i for i in self.L if i != x_k]
+
+    def phi(self, k, x_k, u_k):
+
+        first_option_x = sum([1 for j in self.C if self.rank[j][0] == x_k])
+
+        first_option_u = sum([1 for j in self.C if self.rank[j][0] == u_k])
+
+        return [(self.N - k) * -1 * first_option_x, (self.N - k) * first_option_u]
