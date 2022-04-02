@@ -1,5 +1,3 @@
-import random as rd
-
 class Backward:
 
     def __init__(self, instance):
@@ -15,6 +13,8 @@ class Backward:
         """"
             Solve the problem instance with Backward solver
         """
+
+        print('Running backward solver')
 
         for k in reversed(self.I.K):
 
@@ -75,7 +75,7 @@ class Backward:
 
             cost -= p * self.I.r(y_next, w) # + self.I.t(x, x_next)
 
-            cost += p * self.stored_J[k+1][x_next]
+            cost += p * self.stored_J[k + 1][x_next]
 
         return cost
 
@@ -83,11 +83,13 @@ class Backward:
         """"
             Print optimal policy found by Backward solver
         """
+
+        print('Printing backward policy')
         
         for k in self.I.K:
 
-            print('Stage k = {}'.format(k))
+            print('\tStage {}'.format(k))
 
             for x in self.I.X:
 
-                print('\tFrom location {}, go to location {}'.format(x, self.stored_u[k][x]))
+                print('\t\tAt state {}, take action {}'.format(x, self.stored_u[k][x]))
