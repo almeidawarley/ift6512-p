@@ -31,18 +31,22 @@ if arguments.backward:
     backward_solver.run_solver(arguments.verbose)
     if arguments.policies:
         backward_solver.print_policy()
-    backward_solver.export_policy()
+    if arguments.export:
+        backward_solver.export_policy()
+    backward_solver.print_summary()
 
 if arguments.parametric:
 
     print('\n-------------------- Parametric ----------------------\n')
 
     parametric_solver = pd.Parametric(problem)
-    parametric_solver.train_solver()
+    parametric_solver.train_solver(arguments.verbose)
     parametric_solver.run_solver(arguments.verbose)
     if arguments.policies:
         parametric_solver.print_policy()
-    parametric_solver.export_policy()
+    if arguments.export:
+        parametric_solver.export_policy()
+    parametric_solver.print_summary()
 
 print('\n------------------- Information ----------------------\n')
 
