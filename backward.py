@@ -90,6 +90,36 @@ class Backward:
 
             print('\tStage {}'.format(k))
 
-            for x in self.I.X:
+            if k != self.I.N:
 
-                print('\t\tAt state {}, take action {}'.format(x, self.stored_u[k][x]))
+                for x in self.I.X:
+
+                    print('\t\tAt state {}, take action {}'.format(x, self.stored_u[k][x]))
+
+                    transition = {}
+
+                    for x_next in self.I.X:
+
+                        transition[x_next] = .0
+
+                    for w in self.I.W[k]:
+
+                        y = [x] if x != self.I.empty else []
+
+                        y_next = self.I.f(y, self.stored_u[k][x], w)
+
+                        x_next = self.I.empty if len(y_next) == 0 else y_next[0]
+
+                        p = self.I.p(k, w, y)
+
+                        transition[x_next] += p
+
+                    for x_next, p in transition.items():
+
+                        if p > .0001:
+                        
+                            print('\t\t\tGo to state {} with probability {}'.format(x_next, p))
+
+            else:
+
+                print('\t\tNo actions to take at the last stage')
