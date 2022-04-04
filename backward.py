@@ -1,3 +1,5 @@
+import uuid
+
 class Backward:
 
     def __init__(self, instance):
@@ -9,7 +11,7 @@ class Backward:
         self.stored_J = {}
         self.stored_u = {}
 
-    def run_solver(self):
+    def run_solver(self, verbose = False):
         """"
             Solve the problem instance with Backward solver
         """
@@ -21,7 +23,8 @@ class Backward:
             self.stored_J[k] = {}
             self.stored_u[k] = {}
 
-            print('\tStage {}'.format(k))
+            if verbose:
+                print('\tStage {}'.format(k))
 
             for x in self.I.X:
 
@@ -34,7 +37,8 @@ class Backward:
 
                 else:
 
-                    print('\t\tState {}'.format(x))
+                    if verbose:
+                        print('\t\tState {}'.format(x))
 
                     U = self.I.U(x)
 
@@ -45,7 +49,8 @@ class Backward:
 
                         local = self.Q(k, x, u)
 
-                        print('\t\t\tAction {} -> Q value {}'.format(u, round(local, 2)))
+                        if verbose:
+                            print('\t\t\tAction {} -> Q value {}'.format(u, round(local, 2)))
 
                         if local < minimum:
                             minimum = local
@@ -67,17 +72,21 @@ class Backward:
 
             p = self.I.p(k, w, y)
 
-            # TASK: add condition p > .00001
+            if p > 0.0001:
 
-            y_next = self.I.f(y, u, w)
+                y_next = self.I.f(y, u, w)
 
-            x_next = self.I.empty if len(y_next) == 0 else y_next[0]
+                x_next = self.I.empty if len(y_next) == 0 else y_next[0]
 
-            cost -= p * self.I.r(y_next, w) # + self.I.t(x, x_next)
+                cost -= p * self.I.r(y_next, w) # + self.I.t(x, x_next)
 
-            cost += p * self.stored_J[k + 1][x_next]
+                cost += p * self.stored_J[k + 1][x_next]
 
         return cost
+
+    def J(self, k, x):
+
+        return self.Q(k, x, self.stored_u[k][x])
 
     def print_policy(self):
         """"
@@ -85,7 +94,7 @@ class Backward:
         """
 
         print('Printing backward policy')
-        
+
         for k in self.I.K:
 
             print('\tStage {}'.format(k))
@@ -117,9 +126,17 @@ class Backward:
                     for x_next, p in transition.items():
 
                         if p > .0001:
-                        
-                            print('\t\t\tGo to state {} with probability {}'.format(x_next, p))
+
+                            print('\t\t\tGo to state {} with probability {}'.format(x_next, round(p, 4)))
 
             else:
 
                 print('\t\tNo actions to take at the last stage')
+
+    def export_policy(self):
+
+        print('Exporting backward policy')
+
+        with open('policies/backward_{}_{}_{}.txt'.format(self.I.name, self.I.s, str(uuid.uuid4())[:8]),'w') as output:
+
+            output.write('{}'.format(self.stored_u))

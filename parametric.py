@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.optimize as sp
+import uuid
 
 class Parametric:
 
@@ -9,7 +10,7 @@ class Parametric:
         """
 
         self.I = instance
-        
+
         self.stored_r = {}
         self.stored_u = {}
 
@@ -22,30 +23,12 @@ class Parametric:
 
         for k in reversed(self.I.K):
 
-            print('\tStage {}'.format(k))
-
             if k != self.I.N:
 
-                '''
-
-                # Report values for the sake of conference
-
-                for x in self.I.X:
-
-                    print('\t\tState {}'.format(x))
-
-                    for u in self.I.U(x):
-
-                        local = self.Q(k, x, u)
-
-                        print('\t\t\tAction {} -> Q value {}'.format(u, round(local, 2)))
-
-                '''
-
                 def to_minimize(r, points, labels):
-                    
+
                     return [np.dot(r, point) - label for point, label in zip(points, labels)]
-                    
+
                 r0 = self.I.dummy()
 
                 points = [self.I.phi(k, x, u) for x in self.I.X for u in self.I.U(x)]
@@ -58,17 +41,73 @@ class Parametric:
 
                 report = sp.leastsq(to_minimize, r0, (points, labels))
 
+                with open('training/{}_{}.csv'.format(self.I.name, k), 'w') as output:
+
+                    for i, _ in enumerate(points):
+
+                        output.write('{},{}\n'.format(labels[i], ','.join([str(e) for e in points[i]])))
+
                 self.stored_r[k] = report[0]
+
+        print('Parameters of linear architecture:')
+
+        for k in self.I.K:
+            if k != self.I.N:
+                print('\tStage {}: {}'.format(k, self.stored_r[k]))
+
+
+    def run_solver(self, verbose = False):
+        """"
+            Solve the problem instance with Parametric solver
+        """
+
+        print('Running parametric solver')
+
+        for k in self.I.K:
+
+            if verbose:
+                print('\tStage {}'.format(k))
+
+            self.stored_u[k] = {}
+
+            for x in self.I.X:
+
+                if k == self.I.N:
+
+                    self.stored_u[k][x] = -1
+
+                else:
+
+                    if verbose:
+                        print('\t\tState {}'.format(x))
+
+                    U = self.I.U(x)
+
+                    minimum = self.Qaprox(k, x, U[0])
+                    action = U[0]
+
+                    for u in U:
+
+                        local = self.Qaprox(k, x, u)
+
+                        if verbose:
+                            print('\t\t\tAction {} -> Q value {}'.format(u, round(local, 2)))
+
+                        if local < minimum:
+                            minimum = local
+                            action = u
+
+                    self.stored_u[k][x] = action
 
     def Q(self, k, x, u):
         """"
-            Compute expectation portion of the objective function
+            Compute expectation portion using approximation
         """
 
         y = [x] if x != self.I.empty else []
-        
+
         if k == self.I.N:
-            quit('This should not happen...')
+            quit('Function Q has been wrongly called for time period {}, abort'.format(k))
 
         cost = self.I.m(k, y)
 
@@ -76,28 +115,28 @@ class Parametric:
 
             p = self.I.p(k, w, y)
 
-            # TASK: add condition p > .00001
+            if p > 0.0001:
 
-            y_next = self.I.f(y, u, w)
+                y_next = self.I.f(y, u, w)
 
-            x_next = self.I.empty if len(y_next) == 0 else y_next[0]
+                x_next = self.I.empty if len(y_next) == 0 else y_next[0]
 
-            cost -= p * self.I.r(y_next, w) # + self.I.t(x, x_next)
+                cost -= p * self.I.r(y_next, w) # + self.I.t(x, x_next)
 
-            U  = self.I.U(x_next)
+                U  = self.I.U(x_next)
 
-            minimum = self.Qaprox(k + 1, x_next, U[0])
+                minimum = self.Qaprox(k + 1, x_next, U[0])
 
-            for u_next in self.I.U(x_next):
+                for u_next in self.I.U(x_next):
 
-                local = self.Qaprox(k + 1, x_next, u_next)
+                    local = self.Qaprox(k + 1, x_next, u_next)
 
-                if local < minimum:
+                    if local < minimum:
 
-                    minimum = local
+                        minimum = local
 
-            cost += p * minimum
-        
+                cost += p * minimum
+
         return cost
 
     def Qaprox(self, k, x, u):
@@ -106,13 +145,17 @@ class Parametric:
         """
 
         y = [x] if x != self.I.empty else []
-        
+
         if k == self.I.N:
             return self.I.m(k, y)
 
         phi = self.I.phi(k, x, u)
-        
+
         return np.dot(self.stored_r[k], phi)
+
+    def J(self, k, x):
+
+        return self.Qaprox(k, x, self.stored_u[k][x])
 
     def print_policy(self):
         """"
@@ -120,7 +163,7 @@ class Parametric:
         """
 
         print('Printing parametric policy')
-        
+
         for k in self.I.K:
 
             print('\tStage {}'.format(k))
@@ -152,59 +195,17 @@ class Parametric:
                     for x_next, p in transition.items():
 
                         if p > .0001:
-                        
-                            print('\t\t\tGo to state {} with probability {}'.format(x_next, p))
+
+                            print('\t\t\tGo to state {} with probability {}'.format(x_next, round(p, 4)))
 
             else:
 
                 print('\t\tNo actions to take at the last stage')
 
-    def show_parameters(self):
+    def export_policy(self):
 
-        print('Parameters of linear architecture:')
+        print('Exporting parametric policy')
 
-        for k in self.I.K:
-            if k != self.I.N:
-                print('\tStage {}: {}'.format(k, self.stored_r[k]))
+        with open('policies/parametric_{}_{}_{}.txt'.format(self.I.name, self.I.s, str(uuid.uuid4())[:8]),'w') as output:
 
-    def run_solver(self):
-        """"
-            Solve the problem instance with Parametric solver
-        """
-
-        print('Running parametric solver')
-
-        for k in self.I.K:
-
-            print('\tStage {}'.format(k))
-
-            self.stored_u[k] = {}
-
-            for x in self.I.X:
-
-                if k == self.I.N:
-
-                    self.stored_u[k][x] = -1
-
-                else:
-
-                    print('\t\tState {}'.format(x))
-
-                    U = self.I.U(x)
-
-                    minimum = self.Qaprox(k, x, U[0])
-                    action = U[0]
-
-                    for u in U:
-
-                        local = self.Qaprox(k, x, u)
-
-                        print('\t\t\tAction {} -> Q value {}'.format(u, round(local, 2)))
-
-                        # print('\t For state {} at stage {}, action {} has cost of {}'.format(x, k, u, local))
-
-                        if local < minimum:
-                            minimum = local
-                            action = u
-
-                    self.stored_u[k][x] = action
+            output.write('{}'.format(self.stored_u))
