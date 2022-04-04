@@ -11,7 +11,7 @@ class Instance:
             Read instance information from file and validate it
         """
 
-        rd.seed(100)
+        # rd.seed(100)
 
         self.read_instance(folder, samples, decay)
 
@@ -106,7 +106,7 @@ class Instance:
 
         self.X = [self.empty] + self.L
 
-        print(self)
+        # print(self)
 
     def list_scenarios(self):
         """
