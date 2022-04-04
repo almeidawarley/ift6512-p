@@ -314,8 +314,6 @@ class Instance:
 
         '''
 
-        features += [1 if x_k == self.empty else 0]
-
         for w in self.L:
 
             y_k = [x_k] if x_k != self.empty else []
