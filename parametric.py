@@ -14,7 +14,7 @@ class Parametric:
         self.stored_r = {}
         self.stored_u = {}
 
-    def train_solver(self):
+    def train_solver(self, verbose = False):
         """"
             Train a linear architecture for the Parametric solver
         """
@@ -49,11 +49,13 @@ class Parametric:
 
                 self.stored_r[k] = report[0]
 
-        print('Parameters of linear architecture:')
+        if verbose:
 
-        for k in self.I.K:
-            if k != self.I.N:
-                print('\tStage {}: {}'.format(k, self.stored_r[k]))
+            print('Parameters of linear architecture:')
+
+            for k in self.I.K:
+                if k != self.I.N:
+                    print('\tStage {}: {}'.format(k, self.stored_r[k]))
 
 
     def run_solver(self, verbose = False):
@@ -209,3 +211,7 @@ class Parametric:
         with open('policies/parametric_{}_{}_{}_{}.txt'.format(self.I.name, self.I.s, self.I.d, str(uuid.uuid4())[:8]),'w') as output:
 
             output.write('{}'.format(self.stored_u))
+
+    def print_summary(self, k = 0):
+        for x in self.I.X:
+            print('\tThe expected profit J_{}({}) is {}'.format(k, x, self.J(k, x)))

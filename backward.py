@@ -66,6 +66,9 @@ class Backward:
 
         y = [x] if x != self.I.empty else []
 
+        if k == self.I.N:
+            return self.I.m(k, y)
+
         cost = self.I.m(k, y)
 
         for w in self.I.W[k]:
@@ -140,3 +143,35 @@ class Backward:
         with open('policies/backward_{}_{}_{}_{}.txt'.format(self.I.name, self.I.s, self.I.d, str(uuid.uuid4())[:8]),'w') as output:
 
             output.write('{}'.format(self.stored_u))
+
+    def print_summary(self, k = 0):
+        for x in self.I.X:
+            print('\tThe expected profit J_{}({}) is {}'.format(k, x, self.J(k, x)))
+
+    def evaluate_policy(self, policy):
+
+        # print('Evaluating policy {}'.format(policy))
+
+        evaluated_J = {}
+
+        for k in reversed(self.I.K):
+
+            evaluated_J[k] = {}
+
+            # print('\tStage {}'.format(k))
+
+            for x in self.I.X:
+
+                if k == self.I.N:
+
+                    y = [x] if x != self.I.empty else []
+
+                    evaluated_J[k][x] = self.I.m(k, y)
+
+                else:
+
+                    # print('\t\tState {}'.format(x))
+
+                    evaluated_J[k][x] = self.Q(k, x, policy[k][x])
+
+        return evaluated_J
