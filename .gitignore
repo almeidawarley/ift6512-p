@@ -1,4 +1,7 @@
 _*.py
+*.png
+training/*.csv
+policies/*.txt
 
 
 # Byte-compiled / optimized / DLL files
