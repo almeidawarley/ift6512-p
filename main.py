@@ -1,41 +1,53 @@
-import sys
+import argparse as ag
 import instance as it
 import backward as bd
 import parametric as pd
-import comparator as cp
+import time as tm
+import datetime as dt
 
-print('###################### Starting ########################')
+parser = ag.ArgumentParser(description = 'Compute backward and parametric policies for the multi-period competitive facility location problem of temporary retail faciltiies')
+parser.add_argument('folder', type = str, help = 'Path to the folder containing files with the instance information')
+parser.add_argument('-s', '--samples', type = int, help = 'Set number of samples of the random variable (0 means complete enumeration)', default = 0)
+parser.add_argument('-d', '--decay', type = int, help = 'Set value of rationality decay of the competitors (1 means always fully rational)', default = 1)
+parser.add_argument('--backward', action = 'store_true', help = 'Run the backward solver for the selected instance', default = False)
+parser.add_argument('--parametric', action = 'store_true', help = 'Run the parametric solver for the selected instance', default = False)
+parser.add_argument('--verbose', action = 'store_true', help = 'Print calculations conducted during the training and running the solver', default = False)
+parser.add_argument('--policies', action = 'store_true', help = 'Print policies found by the backward and parametric solvers in textual format', default = False)
+parser.add_argument('--export', action = 'store_true', help = 'Export policy found by the backward and parametric solvers to a file', default = False)
+arguments = parser.parse_args()
 
-problem = it.Instance('instances/{}'.format(sys.argv[1]))
+start_time = tm.time()
+print('>>> Starting script at time {}'.format(dt.datetime.now()))
 
-print('\n--------------------- Backward -----------------------')
+print('\n--------------------- Instance -----------------------\n')
 
-backward_solver = bd.Backward(problem)
-backward_solver.run_solver()
-backward_solver.print_policy()
+problem = it.Instance(arguments.folder, arguments.samples, arguments.decay)
 
-print('\n--------------------- Backward -----------------------')
+if arguments.backward:
 
-print('\n-------------------- Parametric ----------------------')
+    print('\n--------------------- Backward -----------------------\n')
 
-parametric_solver = pd.Parametric(problem)
-parametric_solver.train_solver()
-parametric_solver.run_solver()
-parametric_solver.print_policy()
+    backward_solver = bd.Backward(problem)
+    backward_solver.run_solver(arguments.verbose)
+    if arguments.policies:
+        backward_solver.print_policy()
+    backward_solver.export_policy()
 
-print('\n-------------------- Parametric ----------------------')
+if arguments.parametric:
 
-print('\n-------------------- Comparator ----------------------')
+    print('\n-------------------- Parametric ----------------------\n')
 
-comparator = cp.Comparator(problem, backward_solver, parametric_solver)
-comparator.run_comparison()
+    parametric_solver = pd.Parametric(problem)
+    parametric_solver.train_solver()
+    parametric_solver.run_solver(arguments.verbose)
+    if arguments.policies:
+        parametric_solver.print_policy()
+    parametric_solver.export_policy()
 
-print('\n-------------------- Comparator ----------------------')
+print('\n------------------- Information ----------------------\n')
 
-print('\n******************** Technical ***********************')
+print('If nothing has been done, type python main.py --help for help\n')
 
-parametric_solver.show_parameters()
-
-print('\n******************** Technical ***********************')
-
-print('\n##################### Finishing #######################')
+end_time = tm.time()
+print('>>> Ending script at time {}'.format(dt.datetime.now()))
+print('>>> Elapsed time within the script: {} seconds'.format(round(end_time - start_time, 4)))
