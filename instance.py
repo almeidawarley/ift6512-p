@@ -16,7 +16,7 @@ class Instance:
         self.read_instance(folder)
         self.check_assumptions()
 
-    def read_instance(self, folder):
+    def read_instance(self, folder, apply_sampling = False):
         """"
             Read instance information from file
         """
@@ -94,8 +94,10 @@ class Instance:
             for index, _ in enumerate(self.L):
                 self._r[str(row['id'])][str(index + 1)] = float(row[str(index + 1)])
 
-        self.W = { k : self.list_scenarios() for k in self.K if k != self.N }
-        # self.W = { k : self.sample_scenarios() for k in self.K if k != self.N }
+        if apply_sampling:
+            self.W = { k : self.sample_scenarios() for k in self.K if k != self.N }
+        else:
+            self.W = { k : self.list_scenarios() for k in self.K if k != self.N }
 
         self.empty = '0'
 
@@ -258,10 +260,6 @@ class Instance:
         profits = [beta * (self.r(w, y_k) - self.m(k, w)) for w in omega]
 
         exp = sp.softmax(profits)
-
-        # print('omega = {}'.format(omega))
-        # print('exp[index] = {}'.format(exp[index]))
-        # print('exp = {}'.format(exp))
 
         return exp[index]
 
