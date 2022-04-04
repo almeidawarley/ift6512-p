@@ -206,6 +206,6 @@ class Parametric:
 
         print('Exporting parametric policy')
 
-        with open('policies/parametric_{}_{}_{}.txt'.format(self.I.name, self.I.s, str(uuid.uuid4())[:8]),'w') as output:
+        with open('policies/parametric_{}_{}_{}_{}.txt'.format(self.I.name, self.I.s, self.I.d, str(uuid.uuid4())[:8]),'w') as output:
 
             output.write('{}'.format(self.stored_u))
