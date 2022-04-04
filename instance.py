@@ -6,20 +6,21 @@ import os
 
 class Instance:
 
-    def __init__(self, folder):
+    def __init__(self, folder, samples, decay):
         """"
             Read instance information from file and validate it
         """
 
         rd.seed(100)
 
-        self.read_instance(folder)
-        self.check_assumptions()
+        self.read_instance(folder, samples, decay)
 
-    def read_instance(self, folder, apply_sampling = False):
+    def read_instance(self, folder, samples, decay):
         """"
             Read instance information from file
         """
+
+        print('Reading instance from folder {}'.format(folder))
 
         self.name = os.path.basename(folder)
 
@@ -47,9 +48,7 @@ class Instance:
             self.N = int(content.readline())
             self.L = content.readline().split(',')
             self.C = content.readline().split(',')
-            self.S = int(content.readline())
-            self.d = int(content.readline())
-            
+
         self.L = [i.strip() for i in self.L]
         self.C = [j.strip() for j in self.C]
         self.K = list(range(0, self.N + 1))
@@ -78,7 +77,7 @@ class Instance:
             self.rank[str(row['id'])] = []
             for index, _ in enumerate(self.L):
                 self.rank[str(row['id'])].append(str(row[str(index + 1)]))
-        
+
         revenues_data = pd.read_csv(revenues_path)
 
         if len(revenues_data) != len(self.C):
@@ -94,14 +93,20 @@ class Instance:
             for index, _ in enumerate(self.L):
                 self._r[str(row['id'])][str(index + 1)] = float(row[str(index + 1)])
 
-        if apply_sampling:
+        self.s = samples
+
+        if self.s > 0:
             self.W = { k : self.sample_scenarios() for k in self.K if k != self.N }
         else:
             self.W = { k : self.list_scenarios() for k in self.K if k != self.N }
 
         self.empty = '0'
 
+        self.d = decay
+
         self.X = [self.empty] + self.L
+
+        print(self)
 
     def list_scenarios(self):
         """
@@ -111,7 +116,7 @@ class Instance:
         samples = []
 
         for size in range(0, len(self.L) + 1):
-            
+
             local = tl.combinations(self.L, size)
             samples += [list(e) for e in local]
 
@@ -125,9 +130,9 @@ class Instance:
         samples = []
 
         counter = 0
-        
-        while counter <= self.S:
-            
+
+        while counter <= self.s:
+
             sizes = range(0, len(self.L) + 1)
 
             size = rd.sample(sizes, 1)[0]
@@ -140,30 +145,27 @@ class Instance:
 
         return samples
 
-    def check_assumptions(self):
-        """
-            Check assumptions about the instance information
-        """
-
-        pass
-
     def __str__(self):
         """"
             Translate instance object into a string
         """
 
-        payload = '\n*-------------------------------------------------------------------------*\n\n'
+        payload = '\n*----------------------------------------------------*\n\n'
         payload += '\tInstance name: {}\n'.format(self.name)
         payload += '\tSet of locations: {}\n'.format(self.L)
         payload += '\tSet of customers: {}\n'.format(self.C)
+        payload += '\tLocation maintenance:\n'
+        for i in self.L:
+            payload += '\t\tLocation {}: {}\n'.format(i, self._m[i])
         payload += '\tCustomer preferences:\n'
         for j in self.C:
             payload += '\t\tCustomer {}: '.format(j)
             for index, _ in enumerate(self.L):
                 payload += '{} ({}) {} '.format(self.rank[j][index], self._r[j][self.rank[j][index]], '>' if index != len(self.L) - 1 else '\n')
         payload += '\tNumber of periods: {}\n'.format(self.N)
-        payload += '\tNumber of samples: {}\n'.format(self.S)
-        payload += '\n*-------------------------------------------------------------------------*\n\n'
+        payload += '\tNumber of samples: {}\n'.format(self.s)
+        payload += '\tRationality decay: {}\n'.format(self.d)
+        payload += '\n*---------------------------------------------------*\n\n'
 
         return payload
 
@@ -223,7 +225,7 @@ class Instance:
 
         if not set([u_k]).issubset(self.L + [self.empty]):
             raise Exception('Value computation error: {} is not a subset of {}'.format(u_k, self.L))
-        
+
         if not set(w_k).issubset(self.L):
             raise Exception('Value computation error: {} is not a subset of {}'.format(w_k, self.L))
 
@@ -280,7 +282,7 @@ class Instance:
         features += [1 if x_k == self.empty else 0]
 
         for index, _ in enumerate(self.L):
-            
+
             C = [1 for j in self.C if self.rank[j][index] == x_k]
 
             features += [sum(C)]
@@ -298,7 +300,7 @@ class Instance:
         '''
 
         '''
-        
+
         # Option 2
 
         features += [1 if x_k == self.empty else 0]
@@ -312,18 +314,22 @@ class Instance:
 
         '''
 
+        # features += [int(x_k), int(u_k)]
+
+        features += [self.rank[j].index(x_k) - self.rank[j].index(u_k) if x_k != self.empty else len(self.L) + 1 for j in self.C]
+
         for w in self.L:
 
             y_k = [x_k] if x_k != self.empty else []
 
             features += [self.r(y_k, [w])]
-            
+
             features += [self.m(k, y_k)]
 
             z_k = [u_k]
 
             features += [self.r(z_k, [w])]
-            
+
             features += [self.m(k, z_k)]
 
         return features
