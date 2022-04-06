@@ -11,17 +11,15 @@ grid_y = 1000
 
 name = str(uuid.uuid4())[:8]
 
-number_stages = 12
+number_stages = 6
 number_locations = 10
-number_customers = len(string.ascii_uppercase)
-number_samples = 100
-rational_coef = 10
+number_customers = int(len(string.ascii_uppercase)/2)
 
 map_locations = {}
 map_customers = {}
 
 str_locations = ', '.join([str(i) for i in range(1, number_locations + 1)])
-str_customers = ', '.join(string.ascii_uppercase)
+str_customers = ', '.join(string.ascii_uppercase[:int(len(string.ascii_uppercase)/2)])
 
 for location in range(0, number_locations):
     x = rd.randint(0, grid_x)
@@ -52,8 +50,6 @@ with open('instances/random/metadata.txt', 'w') as output:
     output.write('{}\n'.format(number_stages))
     output.write('{}\n'.format(str_locations))
     output.write('{}\n'.format(str_customers))
-    output.write('{}\n'.format(number_samples))
-    output.write('{}'.format(rational_coef))
 
 # Create locations.csv
 with open('instances/random/locations.csv', 'w') as output:
