@@ -273,64 +273,21 @@ class Instance:
 
         features = []
 
-        '''
-
-        # Option 1
-
-        features += [k]
-
-        features += [1 if x_k == self.empty else 0]
-
-        for index, _ in enumerate(self.L):
-
-            C = [1 for j in self.C if self.rank[j][index] == x_k]
-
-            features += [sum(C)]
-
-            # features += [mt.exp(sum(C))]
-
-            C = [1 for j in self.C if self.rank[j][index] == u_k]
-
-            features += [sum(C)]
-
-            # features += [mt.exp(sum(C))]
-
         features += [self.rank[j].index(x_k) - self.rank[j].index(u_k) if x_k != self.empty else len(self.L) + 1 for j in self.C]
 
-        '''
+        y_k = [x_k] if x_k != self.empty else []
 
-        '''
-
-        # Option 2
-
-        features += [1 if x_k == self.empty else 0]
-
-        features += [self._m[x_k] if x_k != self.empty else 0]
-        features += [self._m[u_k]]
-
-        features += [self._r[j][x_k] if x_k != self.empty else 0 for j in self.C]
-
-        features += [self._r[j][u_k] for j in self.C]
-
-        '''
-
-        # features += [int(x_k), int(u_k)]
-
-        features += [self.rank[j].index(x_k) - self.rank[j].index(u_k) if x_k != self.empty else len(self.L) + 1 for j in self.C]
+        z_k = [u_k]
 
         for w in self.L:
 
-            y_k = [x_k] if x_k != self.empty else []
-
             features += [self.r(y_k, [w])]
-
-            features += [self.m(k, y_k)]
-
-            z_k = [u_k]
 
             features += [self.r(z_k, [w])]
 
-            features += [self.m(k, z_k)]
+        features += [self.m(k, y_k)]
+
+        features += [self.m(k, z_k)]
 
         return features
 
