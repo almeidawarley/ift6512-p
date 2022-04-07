@@ -10,8 +10,8 @@ import os
 # Parse arguments using argparse
 parser = ag.ArgumentParser(description = 'Draw bar graph comparing the parametric policy with the backward policy for some instance')
 parser.add_argument('folder', type = str, help = 'Path to the folder with instance files')
-parser.add_argument('-s', '--samples', type = int, help = 'Set number of samples of the random variable (0 means full enumeration)', default = 0)
-parser.add_argument('-d', '--decay', type = int, help = 'Set value of rationality decay of the competitors (1 means always fully rational)', default = 1)
+parser.add_argument('-s', '--samples', type = int, help = 'Set number of samples (0 means full enumeration)', default = 0)
+parser.add_argument('-d', '--decay', type = int, help = 'Set rationality decay parameter (1 means fully rational)', default = 1)
 arguments = parser.parse_args()
 
 # Create problem object with arguments
