@@ -61,3 +61,5 @@ plt.ylabel('Optimal cost-to-go function J_0(x)')
 plt.legend(loc = 'upper right')
 plt.savefig('graphs/decay_{}.png'.format(problem.name))
 plt.close()
+
+print('Exported decay graph to {}'.format('graphs/decay_{}.png'.format(problem.name)))

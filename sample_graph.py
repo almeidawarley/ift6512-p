@@ -1,71 +1,95 @@
-import ast
-import os
+import matplotlib.pyplot as plt
 import argparse as ag
 import instance as it
 import backward as bd
-import matplotlib.pyplot as plt
+import ast
+import os
 
-parser = ag.ArgumentParser(description = 'Evaluate approximated policy for an instance of the multi-period competitive facility location problem of temporary retail faciltiies')
-parser.add_argument('folder', type = str, help = 'Path to the folder containing files with the instance information')
-parser.add_argument('solver', type = str, help = 'Name of the solver used to generate approximated optimal policy')
-parser.add_argument('-s', '--samples', type = int, help = 'Set number of samples of the random variable (0 means complete enumeration)', default = 0)
-parser.add_argument('-d', '--decay', type = int, help = 'Set value of rationality decay of the competitors (1 means always fully rational)', default = 1)
+# Parse arguments using argparse
+parser = ag.ArgumentParser(description = 'Draw graph with varying values of the number of samples for some instance')
+parser.add_argument('folder', type = str, help = 'Path to the folder with instance files')
+parser.add_argument('-s', '--samples', type = int, help = 'Set number of samples (0 means full enumeration)', default = 0)
+parser.add_argument('-d', '--decay', type = int, help = 'Set rationality decay parameter (1 means fully rational)', default = 1)
 arguments = parser.parse_args()
 
-if arguments.decay <= 1:
-    quit('The decay parameter d = {} should be greater than 1'.format(arguments.decay))
+# Create problem object with arguments
+problem = it.Instance(arguments.folder, arguments.samples, arguments.decay)
 
-problem = it.Instance(arguments.folder, 0, arguments.decay)
-
+# Create reference solver and run it
 reference = bd.Backward(problem)
 reference.run_solver()
 
-policies = []
+# Decide variation of the sample values
+if 'medium' in arguments.folder:
+    # For medium instance
+    sample_values = list(range(1,16))
+else:
+    # For large instance
+    sample_values = [10,20,30,40,50,60,70,80,90,100,120,140,160,180,200]
 
-pattern = '{}_{}_{}_{}'.format(arguments.solver, problem.name, arguments.samples, arguments.decay)
 
-print('Looking for stored policies with pattern {}'.format(pattern))
-
-for file in os.listdir('policies'):
-    if pattern in file:
-        print('\tFound policy {}'.format(file))
-        with open('policies/{}'.format(file)) as output:
-            content = output.read()
-        policy = ast.literal_eval(content)
-        policies.append(policy)
-
+# Create dictionary to store error
 error_J = {}
 
-for k in problem.K:
-    error_J[k] = {}
-    for x in problem.X:
-        error_J[k][x] = []
-
-for identifier, policy in enumerate(policies):
-
-    print('Evaluating policy #{}'.format(identifier))
-
-    evaluated_J = reference.evaluate_policy(policy)
-
+# For each value of s, each time period k, and each state x...
+# There are either 100 runs (medium instance) or 10 runs (large instance)...
+# Store the list to later compute the average error
+for s in sample_values:
+    error_J[s] = {}
     for k in problem.K:
+        error_J[s][k] = {}
         for x in problem.X:
-            error = evaluated_J[k][x] - reference.J(k, x)
-            print('\tError of J_{}({}) = {}'.format(k, x, error))
-            error_J[k][x].append(error)
+            error_J[s][k][x] = []
 
+# Loop over values of parameter s
+for s in sample_values:
+
+    # Retrieve policies in the policy folder with current s (and global d)
+    policies = []
+    pattern = '{}_{}_{}_{}'.format('backward', problem.name, s, arguments.decay)
+    print('Looking for stored policies with pattern {}'.format(pattern))
+
+    # Retrieve the dictionary with the policy from the file using ast package
+    for file in os.listdir('policies'):
+        if pattern in file:
+            print('\tFound policy {}'.format(file))
+            with open('policies/{}'.format(file)) as output:
+                content = output.read()
+            policy = ast.literal_eval(content)
+            policies.append(policy)
+
+    # Loop over retrieved policies in the last step
+    for identifier, policy in enumerate(policies):
+
+        print('Evaluating policy #{}'.format(identifier))
+
+        # Compute the J_k(x) value according to policy
+        # Using the reference solver, "perfect" information
+        evaluated_J = reference.evaluate_policy(policy)
+
+        for k in problem.K:
+            for x in problem.X:
+                # Compute the error of the policy based on the reference
+                error = evaluated_J[k][x] - reference.J(k, x)
+                error_J[s][k][x].append(error)
+
+# Report only for k = 0 and x = 0
 k = 0
+x = '0'
 
+# Compute average over 100 runs (medium instance) or 10 runs (large instance)
 data = []
-label = []
-for x in problem.X:
-    if len(error_J[k][x]) > 0:
-        data.append(error_J[k][x])
-        # label.append('J_{}({})'.format(k, x))
-        label.append('x = {}'.format(x))
+for s in sample_values:
+    if len(error_J[s][k][x]) > 0:
+        avg = sum(error_J[s][k][x]) / len(error_J[s][k][x])
+        data.append(avg)
 
-plt.boxplot(data)
-plt.xticks(range(1, len(problem.X) + 1), label)
-plt.ylabel('Approximation error of cost-to-go function)'.format(k, k))
-plt.xlabel('Feasible states x at stage {}'.format(k))
-plt.savefig('graphs/{}_{}__{}_samples.png'.format(arguments.solver, problem.name, k))
+# Plot averge error of J_0(0) values
+plt.plot(sample_values, data, '-x')
+# Set other graph settings
+plt.ylabel('Average sub-optimality of the J_0(0) value'.format(k, k))
+plt.xlabel('Number of samples s')
+plt.savefig('graphs/samples_{}_{}_{}.png'.format(problem.name, k, x))
 plt.close()
+
+print('Exported sample graph to {}'.format('graphs/samples_{}_{}_{}.png'.format(problem.name, k, x)))
