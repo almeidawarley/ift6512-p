@@ -1,5 +1,5 @@
 _*.py
-*.png
+graphs/*.png
 training/*.csv
 policies/*.txt
 
