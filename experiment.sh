@@ -24,7 +24,7 @@ done
 # Varying number of samples for graphs of question #3
 for i in 10 20 30 40 50 60 70 80 90 100 120 140 160 180 200
 do
-    for j in {1..10}
+    for j in {1..100}
     do
         python main.py instances/large --backward --export -d 2 -s $i
     done
