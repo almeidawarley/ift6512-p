@@ -96,6 +96,10 @@ class Instance:
         self.s = samples
 
         if self.s > 0:
+            if self.s >= 2**len(self.L):
+                valid = int(round(0.9 * 2**len(self.L)))
+                print('Adjusting number of samples from {} to {}'.format(self.s, valid))
+                self.s = valid
             self.W = { k : self.sample_scenarios() for k in self.K if k != self.N }
         else:
             self.W = { k : self.list_scenarios() for k in self.K if k != self.N }
