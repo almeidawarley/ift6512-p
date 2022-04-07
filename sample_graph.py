@@ -77,7 +77,7 @@ for s in sample_values:
 k = 0
 x = '0'
 
-# Compute average over 100 runs (medium instance) or 10 runs (large instance)
+# Compute average error over 100 runs (medium instance) or 10 runs (large instance)
 data = []
 for s in sample_values:
     if len(error_J[s][k][x]) > 0:
