@@ -1,5 +1,15 @@
 # List of experiments ran for the results in the report
 
+# Compute (full) backward policy for instance small
+python main.py instances/small --backward -d 1 --verbose
+python main.py instances/small --backward -d 10 --verbose
+python main.py instances/small --backward -d 100 --verbose
+python main.py instances/small --backward -d 1000 --verbose
+python main.py instances/small --backward -d 10000 --verbose
+
+# Compute (full) parametric policy for instance small
+python main.py instances/small --parametric -d 1 --verbose
+
 # Compute (full) backward policy for instance medium
 python main.py instances/medium --backward --export -d 2
 # Compute (sampled) backward policy for instance large
