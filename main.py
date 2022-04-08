@@ -43,8 +43,12 @@ if arguments.parametric:
 
     # Run parametric solver for the instance
     parametric_solver = pd.Parametric(problem)
+    training_start = tm.time()
     parametric_solver.train_solver(arguments.verbose)
+    training_end = tm.time()
+    print('# Elapsed time with training: {} seconds'.format(round(training_end - training_start, 4)))
     parametric_solver.run_solver(arguments.verbose)
+    print('# Elapsed time with solving: {} seconds'.format(round(tm.time() - training_end, 4)))
     if arguments.policies:
         parametric_solver.print_policy()
     if arguments.export:
