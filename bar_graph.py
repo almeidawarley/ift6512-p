@@ -59,4 +59,4 @@ plt.xlabel('Feasible states at stage {}'.format(k))
 plt.savefig('graphs/bar_{}_{}.png'.format(problem.name, k))
 plt.close()
 
-print('Exported bar graph to {}'.format('graphs/samples_{}_{}_{}.png'.format(problem.name, k, x)))
+print('Exported bar graph to {}'.format('graphs/bar_{}_{}.png'.format(problem.name, k)))
